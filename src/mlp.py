@@ -17,6 +17,8 @@ def train_and_test(dataset, seed=0, learning_rate=.0, hidden_size=0, hidden_num=
     valid_size = 0.05
     test_size = 0.05
 
-    return multilayer_perceptron(dataset, learning_rate, hidden_size, hidden_num, seed=seed, valid_size=valid_size, test_size=test_size)
+    return multilayer_perceptron(dataset, learning_rate, hidden_size, hidden_num, seed=seed, valid_size=valid_size,
+                                 test_size=test_size)
 
-train_and_test('diabetes_binary_health_indicators_BRFSS2015.csv', 25, 1, 10, 1)
+
+train_and_test('diabetes_binary_health_indicators_BRFSS2015.csv', 25, 0.5, 32, 2)

@@ -9,6 +9,8 @@ from sklearn.metrics import confusion_matrix
 def prepare_dataset(dataset, **kwargs):
     csv = pandas.read_csv(dataset, sep=',')
     csv = csv.dropna()
+    csv = balance_data(csv, **kwargs)
+
     data = csv.sample(frac=1., random_state=kwargs['seed'])
 
     normalise_columns = ['BMI', 'GenHlth', 'MentHlth', 'PhysHlth', 'Age', 'Education', 'Income']
@@ -28,6 +30,16 @@ def prepare_dataset(dataset, **kwargs):
 
     return x_train, x_valid, x_test, y_train, y_valid, y_test
 
+def balance_data(csv, **kwargs):
+    positives = csv[csv['Diabetes_binary'] == 1]
+    negatives = csv[csv['Diabetes_binary'] == 0]
+
+    min_samples = min(len(positives), len(negatives))
+
+    positives_balanced = positives.sample(n=min_samples, random_state=kwargs['seed'])
+    negatives_balanced = negatives.sample(n=min_samples, random_state=kwargs['seed'])
+
+    return pandas.concat([positives_balanced, negatives_balanced])
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
@@ -41,23 +53,25 @@ def initialize_weights(input_size, hidden_size, hidden_layers):
     network_weights = []
     bias_weights = []
 
-    initial_hidden_weights = np.random.rand(hidden_size, input_size)
+    scale = np.sqrt(2 / input_size)
+
+    initial_hidden_weights = np.random.randn(hidden_size, input_size) * scale
     network_weights.append(initial_hidden_weights)
 
-    initial_bias_weights = np.random.rand(hidden_size, 1)
+    initial_bias_weights = np.random.randn(hidden_size, 1)
     bias_weights.append(initial_bias_weights)
 
     for i in range(hidden_layers - 1):
-        hidden_weights = np.random.rand(hidden_size, hidden_size)
+        hidden_weights = np.random.randn(hidden_size, hidden_size)
         network_weights.append(hidden_weights)
 
-        hidden_bias_weights = np.random.rand(hidden_size, 1)
+        hidden_bias_weights = np.random.randn(hidden_size, 1)
         bias_weights.append(hidden_bias_weights)
 
-    output_weights = np.random.rand(hidden_size)
+    output_weights = np.random.randn(hidden_size)
     network_weights.append(output_weights)
 
-    output_bias_weights = np.array([np.random.rand()])
+    output_bias_weights = np.array([np.random.randn()])
     bias_weights.append(output_bias_weights)
     return network_weights, bias_weights
 
@@ -142,9 +156,9 @@ def f1_score(result, prediction, threshold=0.5):
     precision_value = precision(tp, fp)
     recall_value = recall(tp, fn)
 
-    print("Accuracy:" + str((tp+tn)/(tp+tn+fp+fn)))
-    print("Precision:" + precision_value)
-    print("Recall:" + recall_value)
+    print("Accuracy: " + str((tp+tn)/(tp+tn+fp+fn)))
+    print("Precision: ", str(precision_value))
+    print("Recall: ", str(recall_value))
 
     if (precision_value + recall_value) == 0:
         return 0
@@ -187,8 +201,10 @@ def multilayer_perceptron(dataset, learning_rate, hidden_size, hidden_num, **kwa
             hidden_outputs, output = forward_propagation(input_values, network_weights, bias_weights, hidden_size,
                                                          hidden_num)
             all_outputs.append(output)
+        print("Train Values")
         train_error = f1_score(y_train, all_outputs)
-        print(train_error)
+        print("F1-Score: " + str(train_error))
+        print()
         f1_train_scores.append(train_error)
         all_outputs.clear()
 
@@ -196,8 +212,10 @@ def multilayer_perceptron(dataset, learning_rate, hidden_size, hidden_num, **kwa
             hidden_outputs, output = forward_propagation(input_values, network_weights, bias_weights, hidden_size,
                                                          hidden_num)
             all_outputs.append(output)
+        print("Valid Values")
         valid_error = f1_score(y_valid, all_outputs)
-        print(valid_error)
+        print("F1-Score: " + str(valid_error))
+        print()
         f1_valid_scores.append(valid_error)
         all_outputs.clear()
 
